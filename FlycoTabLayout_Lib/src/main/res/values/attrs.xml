@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <attr name="tl_mipmaps_select" format="string"/>
+    <attr name="tl_mipmaps_unselect" format="string"/>
+    <attr name="tl_titles" format="string"/>
+
     <!-- indicator -->
     <!-- 设置显示器颜色 -->
     <attr name="tl_indicator_color" format="color"/>
@@ -14,6 +18,7 @@
     <attr name="tl_indicator_margin_bottom" format="dimension"/>
     <!-- 设置显示器圆角弧度-->
     <attr name="tl_indicator_corner_radius" format="dimension"/>
+
     <!-- 设置显示器上方还是下方,只对圆角矩形有用-->
     <attr name="tl_indicator_gravity" format="enum">
         <enum name="TOP" value="48"/>
@@ -116,6 +121,10 @@
     </declare-styleable>
 
     <declare-styleable name="CommonTabLayout">
+        <attr name="tl_mipmaps_select"/>
+        <attr name="tl_mipmaps_unselect"/>
+        <attr name="tl_titles"/>
+
         <!-- indicator -->
         <attr name="tl_indicator_color"/>
         <attr name="tl_indicator_height"/>

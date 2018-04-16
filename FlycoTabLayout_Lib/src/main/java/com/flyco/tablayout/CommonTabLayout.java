@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.util.TypedValue;
@@ -33,6 +34,7 @@ import com.flyco.tablayout.utils.UnreadMsgUtils;
 import com.flyco.tablayout.widget.MsgView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /** 没有继承HorizontalScrollView不能滑动,对于ViewPager无依赖 */
 public class CommonTabLayout extends FrameLayout implements ValueAnimator.AnimatorUpdateListener {
@@ -58,6 +60,11 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
     private float mTabPadding;
     private boolean mTabSpaceEqual;
     private float mTabWidth;
+
+    /** 新添加的几个属性 */
+    private String mIndicatorTitles;
+    private String mIndicatorSelectIds;
+    private String mIndicatorUnSelectIds;
 
     /** indicator */
     private int mIndicatorColor;
@@ -143,6 +150,29 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
 
         mValueAnimator = ValueAnimator.ofObject(new PointEvaluator(), mLastP, mCurrentP);
         mValueAnimator.addUpdateListener(this);
+
+        initData(context);
+    }
+
+    /**
+     * 初始化数据
+     */
+    private void initData(Context context)
+    {
+        if (mIndicatorSelectIds == null || mIndicatorUnSelectIds == null || mIndicatorTitles == null) return;
+        String[] titles = mIndicatorTitles.split(",");
+        String[] selectIds = mIndicatorSelectIds.split(",");
+        String[] unSelectIds = mIndicatorUnSelectIds.split(",");
+        if (titles.length - selectIds.length - unSelectIds.length != - titles.length)
+        {
+            throw new RuntimeException("属性tl_titles、tl_mipmaps_unselect、tl_mipmaps_select定义数量不匹配！");
+        }
+        ArrayList<CustomTabEntity> list = new ArrayList<>();
+        for (int i = 0; i < titles.length; i++)
+        {
+            list.add(new TabEntity(titles[i], getMipmapId(context, selectIds[i]), getMipmapId(context, unSelectIds[i])));
+        }
+        setTabData(list);
     }
 
     private void obtainAttributes(Context context, AttributeSet attrs) {
@@ -187,6 +217,9 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
         mTabWidth = ta.getDimension(R.styleable.CommonTabLayout_tl_tab_width, dp2px(-1));
         mTabPadding = ta.getDimension(R.styleable.CommonTabLayout_tl_tab_padding, mTabSpaceEqual || mTabWidth > 0 ? dp2px(0) : dp2px(10));
 
+        mIndicatorTitles = ta.getString(R.styleable.CommonTabLayout_tl_titles);
+        mIndicatorSelectIds = ta.getString(R.styleable.CommonTabLayout_tl_mipmaps_select);
+        mIndicatorUnSelectIds = ta.getString(R.styleable.CommonTabLayout_tl_mipmaps_unselect);
         ta.recycle();
     }
 
@@ -243,13 +276,9 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
                 int position = (Integer) v.getTag();
                 if (mCurrentTab != position) {
                     setCurrentTab(position);
-                    if (mListener != null) {
-                        mListener.onTabSelect(position);
-                    }
+                    tabSelect(position);
                 } else {
-                    if (mListener != null) {
-                        mListener.onTabReselect(position);
-                    }
+                    tabReselect(position);
                 }
             }
         });
@@ -772,6 +801,45 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
         return mIconVisible;
     }
 
+    /**
+     * 和ViewPager连接
+     */
+    public void linkViewPager(final ViewPager vp)
+    {
+        addOnTabSelectListener(new OnTabSelectListener()
+        {
+            @Override
+            public void onTabSelect(int position)
+            {
+                vp.setCurrentItem(position, false);
+            }
+
+            @Override
+            public void onTabReselect(int position)
+            {
+
+            }
+        });
+
+        vp.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                setCurrentTab(position);
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
+
+    }
+
 
     public ImageView getIconView(int tab) {
         View tabView = mTabsContainer.getChildAt(tab);
@@ -895,12 +963,28 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
         return tipView;
     }
 
-    private OnTabSelectListener mListener;
+    private List<OnTabSelectListener> mListeners = new ArrayList<>();
 
-    public void setOnTabSelectListener(OnTabSelectListener listener) {
-        this.mListener = listener;
+    public void addOnTabSelectListener(OnTabSelectListener listener)
+    {
+        mListeners.add(listener);
     }
 
+    private void tabSelect(int position)
+    {
+        for (OnTabSelectListener l : mListeners)
+        {
+            l.onTabSelect(position);
+        }
+    }
+
+    private void tabReselect(int position)
+    {
+        for (OnTabSelectListener l : mListeners)
+        {
+            l.onTabReselect(position);
+        }
+    }
 
     @Override
     protected Parcelable onSaveInstanceState() {
@@ -952,6 +1036,10 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
     protected int sp2px(float sp) {
         final float scale = this.mContext.getResources().getDisplayMetrics().scaledDensity;
         return (int) (sp * scale + 0.5f);
+    }
+
+    public static int getMipmapId(Context context, String name) {
+        return context.getResources().getIdentifier(name, "mipmap", context.getPackageName());
     }
 
 }
