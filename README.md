@@ -43,6 +43,8 @@ mTabLayout.linkViewPager(mViewPager);
 
 将`setOnTabSelectListener` 监听方法，名字修改为`addOnTabSelectListener`
 
+新增`changeTabData` 用于换肤改变图标时使用
+
 ---
 
 ## Demo
