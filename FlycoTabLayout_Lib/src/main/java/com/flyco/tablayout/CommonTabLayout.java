@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -234,6 +235,17 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
         notifyDataSetChanged();
     }
 
+    public void changeTabData(List<Drawable> selectDrawable, List<Drawable> unSelectedDrawable)
+    {
+        for (int i = 0; i < mTabEntitys.size(); i++)
+        {
+            CustomTabEntity tabEntity = mTabEntitys.get(i);
+            TabDrawableEntity tabDrawableEntity = new TabDrawableEntity(tabEntity.getTabTitle(), selectDrawable.get(i), unSelectedDrawable.get(i));
+            mTabEntitys.remove(tabEntity);
+            mTabEntitys.add(i, tabDrawableEntity);
+        }
+    }
+
     /** 关联数据支持同时切换fragments */
     public void setTabData(ArrayList<CustomTabEntity> tabEntitys, FragmentActivity fa, int containerViewId, ArrayList<Fragment> fragments) {
         mFragmentChangeManager = new FragmentChangeManager(fa.getSupportFragmentManager(), containerViewId, fragments);
@@ -315,7 +327,7 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
             if (mIconVisible) {
                 iv_tab_icon.setVisibility(View.VISIBLE);
                 CustomTabEntity tabEntity = mTabEntitys.get(i);
-                iv_tab_icon.setImageResource(i == mCurrentTab ? tabEntity.getTabSelectedIcon() : tabEntity.getTabUnselectedIcon());
+                setIconRes(tabEntity, i, iv_tab_icon);
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                         mIconWidth <= 0 ? LinearLayout.LayoutParams.WRAP_CONTENT : (int) mIconWidth,
                         mIconHeight <= 0 ? LinearLayout.LayoutParams.WRAP_CONTENT : (int) mIconHeight);
@@ -336,6 +348,18 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
         }
     }
 
+    private void setIconRes(CustomTabEntity tabEntity, int i, ImageView iv_tab_icon)
+    {
+        if (tabEntity instanceof TabDrawableEntity)
+        {
+            TabDrawableEntity tde = (TabDrawableEntity) tabEntity;
+            iv_tab_icon.setImageDrawable(i == mCurrentTab ? tde.getSelectedDrawable() : tde.getUnSelectedDrawable());
+        } else
+        {
+            iv_tab_icon.setImageResource(i == mCurrentTab ? tabEntity.getTabSelectedIcon() : tabEntity.getTabUnselectedIcon());
+        }
+    }
+
     private void updateTabSelection(int position) {
         for (int i = 0; i < mTabCount; ++i) {
             View tabView = mTabsContainer.getChildAt(i);
@@ -344,7 +368,7 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
             tab_title.setTextColor(isSelect ? mTextSelectColor : mTextUnselectColor);
             ImageView iv_tab_icon = (ImageView) tabView.findViewById(R.id.iv_tab_icon);
             CustomTabEntity tabEntity = mTabEntitys.get(i);
-            iv_tab_icon.setImageResource(isSelect ? tabEntity.getTabSelectedIcon() : tabEntity.getTabUnselectedIcon());
+            setIconRes(tabEntity, i, iv_tab_icon);
             if (mTextBold == TEXT_BOLD_WHEN_SELECT) {
                 tab_title.getPaint().setFakeBoldText(isSelect);
             }
@@ -936,7 +960,13 @@ public class CommonTabLayout extends FrameLayout implements ValueAnimator.Animat
             float margin = 0;
             if (mIconVisible) {
                 if (iconH <= 0) {
-                    iconH = mContext.getResources().getDrawable(mTabEntitys.get(position).getTabSelectedIcon()).getIntrinsicHeight();
+                    if (mTabEntitys.get(position) instanceof TabDrawableEntity)
+                    {
+                        iconH = ((TabDrawableEntity) mTabEntitys.get(position)).getSelectedDrawable().getIntrinsicHeight();
+                    } else
+                    {
+                        iconH = mContext.getResources().getDrawable(mTabEntitys.get(position).getTabSelectedIcon()).getIntrinsicHeight();
+                    }
                 }
                 margin = mIconMargin;
             }
